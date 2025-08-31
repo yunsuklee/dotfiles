@@ -1,0 +1,53 @@
+[user]
+    name = {{ .git.name | quote }}
+	email = {{ .git.email | quote }}
+[alias]
+	alias = config --get-regexp alias
+	co = checkout
+	cb = checkout -b
+	cop = "!f() { git checkout \"$1\" && git pull; }; f"
+	cp = cherry-pick
+	sw = switch
+	br = branc
+	db = branch -d
+	ci = commit
+	cm = commit -m
+	ca = commit -am
+	amend = commit --amend
+	hot = "!f() { git add -A && git commit -m \"$1\" && git push; }; f"
+	st = status
+	s = status -s
+	last = log -1 HEAD
+	ll = log --oneline --graph --decorate
+	pullr = pull --rebase
+	df = diff --word-dif
+	dc = diff --cached
+	staged = diff --cached
+	unstage = reset HEAD --
+	undo = reset --soft HEAD~1
+	reset = reset --hard HEAD~1
+[filter "lfs"]
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true
+	clean = git-lfs clean -- %f
+[core]
+	eol = lf
+	autocrlf = input
+	editor = nvim
+	pager = delta
+[interactive]
+	diffFilter = delta --color-only
+[delta]
+	navigate = true
+	light = false
+[merge]
+	conflictstyle = diff3
+	tool = vimdiff
+[diff]
+	colorMoved = default
+[color]
+    ui = auto
+    branch = auto
+    diff = auto
+    status = auto

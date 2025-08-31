@@ -1,3 +1,12 @@
 [data]
   reposDir = {{ if eq .chezmoi.hostname "DESKTOP-ASUS-TUF" }}"D:\\repos"{{ else }}"C:\\repos"{{ end }}
   defaultProfile = "{574e775e-4f2a-5b96-ac1e-a2962a402336}"
+
+[data.git]
+{{- if eq .chezmoi.hostname "DESKTOP-ASUS-TUF" }}
+  name = "yunsuklee"
+  email = "sergioleesp@gmail.com"
+{{- else }}
+  name = "Sergio Y. Lee"
+  email = "sergioyunsuk_lee@bluesign.com"
+{{- end }}

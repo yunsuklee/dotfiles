@@ -1,0 +1,19 @@
+{{- if ne .chezmoi.os "windows" }}
+AppData/
+{{- end }}
+
+# Notepad++ machine-specific files
+AppData/Roaming/Notepad++/session.xml
+AppData/Roaming/Notepad++/session.xml.inCaseOfCorruption.bak
+AppData/Roaming/Notepad++/backup/
+AppData/Roaming/Notepad++/*.log
+AppData/Roaming/Notepad++/v*NoNeedShortcutsBackup.xml
+
+# lite-xl machine-specific files
+.config/lite-xl/session.lua
+.config/lite-xl/font_cache.lua
+.config/lite-xl/ws/
+
+# Windows Terminal machine-specific files
+AppData/Local/Packages/Microsoft.WindowsTerminal_8wekyb3d8bbwe/LocalState/state.json
+AppData/Local/Packages/Microsoft.WindowsTerminal_8wekyb3d8bbwe/LocalState/elevated-state.json

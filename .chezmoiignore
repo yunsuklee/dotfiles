@@ -2,6 +2,9 @@
 AppData/
 {{- end }}
 
+# Nvim machine-specific files
+AppData/Local/nvim/lazy-lock.json
+
 # Notepad++ machine-specific files
 AppData/Roaming/Notepad++/session.xml
 AppData/Roaming/Notepad++/session.xml.inCaseOfCorruption.bak

@@ -1,13 +1,3 @@
-# chezmoi configuration template
-{{- $reposDir := "" }}
-
-{{- if eq .chezmoi.hostname "DESKTOP-ASUS-TUF" }}
-{{-   $reposDir = "D:\\repos" }}
-{{- else }}
-{{-   $reposDir = "C:\\repos" }}
-
 [data]
-    reposDir = {{ $reposDir | quote }}
-    # Set defaultProfile to the GUID of PowerShell Core on each machine
-    # Run: Get-WindowsTerminalProfile to find the correct GUID
-    defaultProfile = "{{ $defaultProfile | default "{574e775e-4f2a-5b96-ac1e-a2962a402336}" }}"
+  reposDir = {{ if eq .chezmoi.hostname "DESKTOP-ASUS-TUF" }}"D:\\repos"{{ else }}"C:\\repos"{{ end }}
+  defaultProfile = "{574e775e-4f2a-5b96-ac1e-a2962a402336}"

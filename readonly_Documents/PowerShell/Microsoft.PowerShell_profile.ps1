@@ -13,6 +13,32 @@ Remove-Item Alias:ls -Force -ErrorAction SilentlyContinue
 function ls { Get-ChildItem -Force @args }
 function ll { Get-ChildItem -Force @args | Format-Table Mode, LastWriteTime, Length, Name -AutoSize }
 function cat { Get-Content @args }
+function rmd {
+    [CmdletBinding(SupportsShouldProcess)]
+    param (
+        [Parameter(Mandatory, Position = 0, ValueFromPipeline)]
+        [string]$Path
+    )
+
+    if (-Not (Test-Path $Path)) {
+        Write-Warning "Path '$Path' does not exist."
+        return
+    }
+
+    if (-Not (Get-Item $Path).PSIsContainer) {
+        Write-Warning "'$Path' is not a directory."
+        return
+    }
+
+    try {
+        Remove-Item -Path $Path -Recurse -Force -Confirm:$false -ErrorAction Stop
+        Write-Host "Directory '$Path' removed successfully." -ForegroundColor Green
+    } catch {
+        Write-Error "Failed to remove '$Path': $_"
+    }
+}
+Remove-Item Alias:pwd -Force -ErrorAction SilentlyContinue
+function pwd { (Get-Location).Path }
 
 #######################################################
 # ZOXIDE INITIALIZATION
@@ -42,6 +68,7 @@ function Enable-PoshGit {
         $global:PoshGitLoaded = $true
     }
 }
+Set-Alias gitenv Enable-PoshGit
 
 #######################################################
 # NAVIGATION WITH AUTO-LS AND GIT DETECTION

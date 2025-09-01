@@ -99,6 +99,7 @@ return {
       },
     },
     opts = {
+      shell = vim.fn.has 'win32' == 1 and 'pwsh' or vim.o.shell,
       direction = 'float',
       float_opts = {
         border = 'curved',

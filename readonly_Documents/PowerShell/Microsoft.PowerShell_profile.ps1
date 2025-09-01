@@ -160,7 +160,8 @@ function prompt {
         Write-Host ""
     }
 
-    return "❯ "
+   $ESC = [char]27
+   return "$ESC]9;9;$PWD$ESC\❯ "
 }
 
 #######################################################

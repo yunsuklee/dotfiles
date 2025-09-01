@@ -2,13 +2,8 @@
 # MODERN TOOL REPLACEMENTS
 #######################################################
 
-if (Get-Command fd -ErrorAction SilentlyContinue) {
-    function find { fd @args }
-}
-
-if (Get-Command rg -ErrorAction SilentlyContinue) {
-    function grep { rg @args }
-}
+function find { fd @args }
+function grep { rg @args }
 
 #######################################################
 # NATIVE POWERSHELL SOLUTIONS
@@ -17,35 +12,80 @@ if (Get-Command rg -ErrorAction SilentlyContinue) {
 Remove-Item Alias:ls -Force -ErrorAction SilentlyContinue
 function ls { Get-ChildItem -Force @args }
 function ll { Get-ChildItem -Force @args | Format-Table Mode, LastWriteTime, Length, Name -AutoSize }
-
 function cat { Get-Content @args }
 
 #######################################################
-# NAVIGATION WITH AUTO-LS
+# ZOXIDE INITIALIZATION
 #######################################################
 
-function Set-LocationWithList {
-    param([string]$Path = "~")
-    Set-Location $Path
-    ls
+Invoke-Expression (& { (zoxide init powershell | Out-String) })
+
+#######################################################
+# LAZY POSH-GIT SETUP
+#######################################################
+
+# Global variable to track if posh-git is loaded
+$global:PoshGitLoaded = $false
+
+# Function to load posh-git when needed
+function Enable-PoshGit {
+    if (-not $global:PoshGitLoaded) {
+        Import-Module posh-git
+
+        # Configure posh-git settings AFTER importing
+        $GitPromptSettings.EnablePromptStatus = $true
+        $GitPromptSettings.EnableFileStatus = $false
+        $GitPromptSettings.ShowStatusWhenZero = $false
+        $GitPromptSettings.AutoRefreshIndex = $false
+        $GitPromptSettings.EnableStashStatus = $false
+
+        $global:PoshGitLoaded = $true
+    }
 }
 
-Remove-Item Alias:cd -Force -ErrorAction SilentlyContinue
-Set-Alias cd Set-LocationWithList
+#######################################################
+# NAVIGATION WITH AUTO-LS AND GIT DETECTION
+#######################################################
+
+# Override zoxide's cd to add auto-ls and git detection
+function cd {
+    __zoxide_z @args
+    if ($?) {
+        # Load posh-git if we're in a git repo
+        if (Test-Path .git -PathType Container) {
+            Enable-PoshGit
+        }
+        ls
+    }
+}
 
 #######################################################
 # SHORTCUTS
 #######################################################
 
 # Navigation
-function .. { Set-Location .. }
-function ... { Set-Location ../.. }
+function .. {
+    Set-Location ..
+    # Track with zoxide
+    if (Get-Command __zoxide_hook -ErrorAction SilentlyContinue) {
+        __zoxide_hook
+    }
+}
+function ... {
+    Set-Location ../..
+    # Track with zoxide
+    if (Get-Command __zoxide_hook -ErrorAction SilentlyContinue) {
+        __zoxide_hook
+    }
+}
+
+# Go back to previous directory
+function back { Set-Location - }
 
 # Editor
-if (Get-Command nvim -ErrorAction SilentlyContinue) {
-    Set-Alias vi nvim -Force
-    Set-Alias vim nvim -Force
-}
+Set-Alias vi nvim -Force
+Set-Alias vim nvim -Force
+$env:EDITOR = "nvim"
 
 # mkdir with parents
 function mkdir { New-Item -ItemType Directory -Force @args }
@@ -63,41 +103,61 @@ function touch {
 }
 
 #######################################################
-# INITIALIZATION
+# PROMPT FUNCTION
 #######################################################
 
-# Set environment
-$env:EDITOR = "nvim"
+# Pure-style prompt function
+function prompt {
+    Write-Host ""  # Blank line before prompt
 
-# Only initialize zoxide
-if (Get-Command zoxide -ErrorAction SilentlyContinue) {
-    Invoke-Expression (& { (zoxide init powershell | Out-String) })
+    $currentPath = (Get-Location).Path.Replace($HOME, "~")
+    Write-Host $currentPath -ForegroundColor Cyan -NoNewline
 
-    function z {
-        & (Get-Command __zoxide_z -CommandType Function) @args
-        if ($?) { ls }
+    # Check if we're in a git repo and load posh-git if needed
+    if (Test-Path .git -PathType Container) {
+        Enable-PoshGit
+
+        $gitStatus = Get-GitStatus
+        if ($gitStatus) {
+            $gitInfo = " $($gitStatus.Branch)"
+            if ($gitStatus.HasUntracked) { $gitInfo += "*" }
+            if ($gitStatus.HasWorking) { $gitInfo += "!" }
+            if ($gitStatus.AheadBy -gt 0) { $gitInfo += " ⇡" }
+            if ($gitStatus.BehindBy -gt 0) { $gitInfo += " ⇣" }
+
+            Write-Host $gitInfo -ForegroundColor Yellow
+        } else {
+            Write-Host ""
+        }
+    } else {
+        Write-Host ""
     }
+
+    return "❯ "
 }
 
-# Initialize starship
-if (Get-Command starship -ErrorAction SilentlyContinue) {
-    Invoke-Expression (& { (starship init powershell | Out-String) })
+#######################################################
+# CHOCOLATEY SUPPORT
+#######################################################
+
+function refreshenv {
+    if (-not (Get-Module chocolateyProfile)) {
+        Import-Module $env:ChocolateyInstall\helpers\chocolateyProfile.psm1
+    }
+    refreshenv
 }
 
-# Add to your profile for permanent chocolatey support
-if (Test-Path $env:ChocolateyInstall\helpers\chocolateyProfile.psm1) {
-    Import-Module $env:ChocolateyInstall\helpers\chocolateyProfile.psm1
-}
+#######################################################
+# VISUAL STUDIO ENVIRONMENT
+#######################################################
 
 function Enable-MSVC {
-    # Load VS 2022 environment without starting dev shell
     $vsPath = "${env:ProgramFiles}\Microsoft Visual Studio\2022"
     $editions = @("Enterprise", "Professional", "Community")
 
     foreach ($edition in $editions) {
         $vcvarsPath = "$vsPath\$edition\VC\Auxiliary\Build\vcvars64.bat"
         if (Test-Path $vcvarsPath) {
-            # Import VS environment variables
             cmd /c "`"$vcvarsPath`" > nul 2>&1 && set" | ForEach-Object {
                 if ($_ -match '^([^=]+)=(.*)$') {
                     [System.Environment]::SetEnvironmentVariable($matches[1], $matches[2], 'Process')
@@ -110,3 +170,8 @@ function Enable-MSVC {
     Write-Host "Visual Studio 2022 not found" -ForegroundColor Red
 }
 Set-Alias vsenv Enable-MSVC
+
+#######################################################
+# INITIALIZATION COMPLETE
+#######################################################
+
